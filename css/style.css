@@ -1,0 +1,57 @@
+/* Global Styles */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    flex: 1;
+}
+
+/* Form Styles */
+.form-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Table Styles */
+.table-responsive {
+    margin-top: 20px;
+}
+
+/* Menu Item Card */
+.menu-item {
+    margin-bottom: 20px;
+    transition: transform 0.2s;
+}
+
+.menu-item:hover {
+    transform: translateY(-5px);
+}
+
+/* Reservation Form */
+.reservation-form {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+/* Employee Schedule */
+.schedule-table th {
+    background-color: #f8f9fa;
+}
+
+/* Payment Status */
+.payment-pending {
+    color: #ffc107;
+}
+
+.payment-complete {
+    color: #28a745;
+}
+
+.payment-failed {
+    color: #dc3545;
+}
