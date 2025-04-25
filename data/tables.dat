@@ -1,0 +1,94 @@
+{
+    "customers": [
+        {
+            "id": 1,
+            "first_name": "Alice",
+            "last_name": "Johnson",
+
+            "phone": "555-0201"
+        },
+        {
+            "id": 2,
+            "first_name": "Bob",
+            "last_name": "Wilson",
+
+            "phone": "555-0202"
+        }
+    ],
+    "employees": [
+        {
+            "id": 1,
+            "first_name": "John",
+            "last_name": "Smith",
+            "role": "Server",
+            "phone": "555-0101",
+            "email": "john.smith@restaurant.com"
+        },
+        {
+            "id": 2,
+            "first_name": "Maria",
+            "last_name": "Garcia",
+            "role": "Chef",
+            "phone": "555-0102",
+            "email": "maria.garcia@restaurant.com"
+        }
+    ],
+    "menu_items": [
+        {
+            "id": 1,
+            "item_name": "Classic Burger",
+            "price": 12.99,
+            "stock_availability": true
+        },
+        {
+            "id": 2,
+            "item_name": "Caesar Salad",
+            "price": 9.99,
+            "stock_availability": true
+        }
+    ],
+    "orders": [
+        {
+            "id": 1,
+            "customer_id": 1,
+            "order_status_id": 1,
+            "table_id": 5,
+            "order_date": "2025-04-25T16:30:00",
+            "total_price": 22.98,
+            "items": [
+                {
+                    "menu_item_id": 1,
+                    "qty_ordered": 1
+                },
+                {
+                    "menu_item_id": 2,
+                    "qty_ordered": 1
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "customer_id": 2,
+            "order_status_id": 2,
+            "table_id": 3,
+            "order_date": "2025-04-25T16:35:00",
+            "total_price": 12.99,
+            "items": [
+                {
+                    "menu_item_id": 1,
+                    "qty_ordered": 1
+                }
+            ]
+        }
+    ],
+    "payments": [
+        {
+            "id": 1,
+            "order_id": 1,
+            "payment_method": "credit_card",
+            "amount_paid": 22.98,
+            "payment_date": "2025-04-25T16:35:00",
+            "payment_status": "completed"
+        }
+    ]
+}

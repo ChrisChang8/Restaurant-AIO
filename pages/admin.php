@@ -11,16 +11,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 INSERT INTO TABLES (table_number, num_seats, seat_is_occupied)
                 VALUES (:table_number, :num_seats, FALSE)
             ");
-            
             $stmt->execute([
                 ':table_number' => $_POST['table_number'],
                 ':num_seats' => $_POST['num_seats']
             ]);
-            
             $_SESSION['success'] = "Table added successfully!";
-            
         } elseif ($_POST['action'] === 'delete_table') {
-            // Check if table is in use
             $stmt = $conn->prepare("
                 SELECT COUNT(*) as count 
                 FROM FOOD_ORDER 
@@ -29,7 +25,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
             $stmt->execute([':table_id' => $_POST['table_id']]);
             $inUse = $stmt->fetch()['count'] > 0;
-            
             if ($inUse) {
                 $_SESSION['error'] = "Cannot delete table - it has active orders!";
             } else {
@@ -37,22 +32,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([':id' => $_POST['table_id']]);
                 $_SESSION['success'] = "Table deleted successfully!";
             }
-            
+        } elseif ($_POST['action'] === 'toggle_table_status') {
+            $stmt = $conn->prepare("
+                UPDATE TABLES 
+                SET seat_is_occupied = NOT seat_is_occupied
+                WHERE id = :table_id
+            ");
+            $stmt->execute([':table_id' => $_POST['table_id']]);
+            $_SESSION['success'] = "Table status updated!";
         } elseif ($_POST['action'] === 'add_menu_item') {
             $stmt = $conn->prepare("
                 INSERT INTO MENU_ITEM (item_name, price, stock_availability)
                 VALUES (:item_name, :price, TRUE)
             ");
-            
             $stmt->execute([
                 ':item_name' => $_POST['item_name'],
                 ':price' => $_POST['price']
             ]);
-            
             $_SESSION['success'] = "Menu item added successfully!";
-            
         } elseif ($_POST['action'] === 'delete_menu_item') {
-            // Check if item is in any active orders
             $stmt = $conn->prepare("
                 SELECT COUNT(*) as count 
                 FROM ORDER_MENU_ITEM OMI
@@ -62,7 +60,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
             $stmt->execute([':menu_item_id' => $_POST['menu_item_id']]);
             $inUse = $stmt->fetch()['count'] > 0;
-            
             if ($inUse) {
                 $_SESSION['error'] = "Cannot delete menu item - it is in active orders!";
             } else {
@@ -70,9 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([':id' => $_POST['menu_item_id']]);
                 $_SESSION['success'] = "Menu item deleted successfully!";
             }
-            
         } elseif ($_POST['action'] === 'clear_completed') {
-            // Clear completed orders older than specified days
             $days = intval($_POST['days']);
             $stmt = $conn->prepare("
                 DELETE FROM FOOD_ORDER 
@@ -83,39 +78,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 AND order_date < DATE_SUB(NOW(), INTERVAL :days DAY)
             ");
             $stmt->execute([':days' => $days]);
-            
             $_SESSION['success'] = "Old completed orders cleared successfully!";
-            
         } elseif ($_POST['action'] === 'backup_db') {
-            // Get all table data
             $tables = ['CUSTOMERS', 'TABLES', 'RESERVATIONS', 'ORDER_STATUS', 'FOOD_ORDER', 
                       'MENU_ITEM', 'ORDER_MENU_ITEM', 'PAYMENT', 'EMPLOYEES', 'SCHEDULES'];
-            
             $backup = [];
             foreach ($tables as $table) {
                 $stmt = $conn->query("SELECT * FROM $table");
                 $backup[$table] = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
-            
-            // Save as JSON file
             $backupFile = '../backups/backup_' . date('Y-m-d_H-i-s') . '.json';
             if (!file_exists('../backups')) {
                 mkdir('../backups', 0777, true);
             }
             file_put_contents($backupFile, json_encode($backup, JSON_PRETTY_PRINT));
-            
             $_SESSION['success'] = "Database backup created successfully!";
         }
-        
     } catch(PDOException $e) {
         $_SESSION['error'] = "Error: " . $e->getMessage();
     }
-    
     header('Location: ' . $_SERVER['PHP_SELF']);
     exit();
 }
 
-// Get current data
+// Fetch current database information
 $tables = $conn->query("
     SELECT T.*, 
            (SELECT COUNT(*) FROM FOOD_ORDER FO WHERE FO.table_id = T.id AND 
@@ -246,6 +232,16 @@ require_once '../includes/header.php';
                                             <?php endif; ?>
                                         </td>
                                         <td>
+                                            <!-- Toggle Seat Status Button -->
+                                            <form method="POST" class="d-inline">
+                                                <input type="hidden" name="action" value="toggle_table_status">
+                                                <input type="hidden" name="table_id" value="<?php echo $table['id']; ?>">
+                                                <button type="submit" class="btn btn-sm <?php echo $table['seat_is_occupied'] ? 'btn-success' : 'btn-warning'; ?>">
+                                                    <?php echo $table['seat_is_occupied'] ? 'Mark Available' : 'Mark Occupied'; ?>
+                                                </button>
+                                            </form>
+
+                                            <!-- Delete Table Button -->
                                             <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this table?');">
                                                 <input type="hidden" name="action" value="delete_table">
                                                 <input type="hidden" name="table_id" value="<?php echo $table['id']; ?>">
