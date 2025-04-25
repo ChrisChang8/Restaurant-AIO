@@ -3,6 +3,66 @@ session_start();
 require_once '../config/database.php';
 $conn = getDBConnection();
 
+// Handle delete reservation
+if (isset($_POST['delete_reservation'])) {
+    try {
+        $stmt = $conn->prepare("DELETE FROM RESERVATIONS WHERE id = ?");
+        $stmt->execute([$_POST['reservation_id']]);
+        $_SESSION['success'] = "Reservation deleted successfully!";
+    } catch(PDOException $e) {
+        $_SESSION['error'] = "Error deleting reservation: " . $e->getMessage();
+    }
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit();
+}
+
+// Handle edit reservation
+if (isset($_POST['edit_reservation'])) {
+    try {
+        // Check for time overlap (2-hour margin)
+        $stmt = $conn->prepare("
+            SELECT COUNT(*) FROM RESERVATIONS 
+            WHERE table_id = :table_id 
+            AND id != :reservation_id
+            AND reservation_date BETWEEN 
+                DATE_SUB(:reservation_date, INTERVAL 2 HOUR) AND
+                DATE_ADD(:reservation_date, INTERVAL 2 HOUR)
+        ");
+        
+        $stmt->execute([
+            ':table_id' => $_POST['table_id'],
+            ':reservation_date' => $_POST['reservation_date'],
+            ':reservation_id' => $_POST['reservation_id']
+        ]);
+        
+        if ($stmt->fetchColumn() > 0) {
+            throw new Exception("This time slot conflicts with another reservation (±2 hours)");
+        }
+
+        // Update the reservation
+        $stmt = $conn->prepare("
+            UPDATE RESERVATIONS 
+            SET num_guests = :num_guests,
+                reservation_date = :reservation_date,
+                table_id = :table_id
+            WHERE id = :id
+        ");
+        
+        $stmt->execute([
+            ':num_guests' => $_POST['num_guests'],
+            ':reservation_date' => $_POST['reservation_date'],
+            ':table_id' => $_POST['table_id'],
+            ':id' => $_POST['reservation_id']
+        ]);
+        
+        $_SESSION['success'] = "Reservation updated successfully!";
+    } catch(Exception $e) {
+        $_SESSION['error'] = $e->getMessage();
+    }
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit();
+}
+
 // Display messages from session
 if (isset($_SESSION['success'])) {
     $success = $_SESSION['success'];
@@ -14,8 +74,26 @@ if (isset($_SESSION['error'])) {
 }
 
 // Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete_reservation']) && !isset($_POST['edit_reservation'])) {
     try {
+        // Check for time overlap (2-hour margin)
+        $stmt = $conn->prepare("
+            SELECT COUNT(*) FROM RESERVATIONS 
+            WHERE table_id = :table_id 
+            AND reservation_date BETWEEN 
+                DATE_SUB(:reservation_date, INTERVAL 2 HOUR) AND
+                DATE_ADD(:reservation_date, INTERVAL 2 HOUR)
+        ");
+        
+        $stmt->execute([
+            ':table_id' => $_POST['table_id'],
+            ':reservation_date' => $_POST['reservation_date']
+        ]);
+        
+        if ($stmt->fetchColumn() > 0) {
+            throw new Exception("This time slot conflicts with another reservation (±2 hours)");
+        }
+
         $stmt = $conn->prepare("
             INSERT INTO CUSTOMERS (first_name, last_name, phone)
             VALUES (:first_name, :last_name, :phone)
@@ -133,6 +211,7 @@ require_once '../includes/header.php';
                             <th>Guests</th>
                             <th>Date & Time</th>
                             <th>Phone</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -143,6 +222,57 @@ require_once '../includes/header.php';
                                 <td><?php echo htmlspecialchars($reservation['num_guests']); ?></td>
                                 <td><?php echo htmlspecialchars(date('M j, Y g:i A', strtotime($reservation['reservation_date']))); ?></td>
                                 <td><?php echo htmlspecialchars($reservation['phone']); ?></td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editModal<?php echo $reservation['id']; ?>">
+                                        Edit
+                                    </button>
+                                    <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this reservation?');">
+                                        <input type="hidden" name="reservation_id" value="<?php echo $reservation['id']; ?>">
+                                        <button type="submit" name="delete_reservation" class="btn btn-sm btn-danger">Delete</button>
+                                    </form>
+
+                                    <!-- Edit Modal -->
+                                    <div class="modal fade" id="editModal<?php echo $reservation['id']; ?>" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Edit Reservation</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <form method="POST">
+                                                    <div class="modal-body">
+                                                        <input type="hidden" name="reservation_id" value="<?php echo $reservation['id']; ?>">
+                                                        
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Number of Guests</label>
+                                                            <input type="number" name="num_guests" class="form-control" required min="1" value="<?php echo $reservation['num_guests']; ?>">
+                                                        </div>
+                                                        
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Date & Time</label>
+                                                            <input type="datetime-local" name="reservation_date" class="form-control" required value="<?php echo date('Y-m-d\TH:i', strtotime($reservation['reservation_date'])); ?>">
+                                                        </div>
+                                                        
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Table</label>
+                                                            <select name="table_id" class="form-control" required>
+                                                                <?php foreach ($tables as $table): ?>
+                                                                    <option value="<?php echo $table['id']; ?>" <?php echo ($table['id'] == $reservation['table_id']) ? 'selected' : ''; ?>>
+                                                                        Table <?php echo $table['table_number']; ?> (<?php echo $table['num_seats']; ?> seats)
+                                                                    </option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                        <button type="submit" name="edit_reservation" class="btn btn-primary">Save changes</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
