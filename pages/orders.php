@@ -89,12 +89,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':status_id' => $_POST['status_id']
             ]);
             
-            // If order is delivered, create payment record
+            // If order is delivered, create or update payment record
             if ($_POST['status_id'] == 4) { // Delivered status
                 $stmt = $conn->prepare("
                     INSERT INTO PAYMENT (order_id, payment_method, amount_paid, payment_date, payment_status)
                     SELECT id, 'Pending', total_price, NOW(), 'Pending'
                     FROM FOOD_ORDER WHERE id = :order_id
+                    ON DUPLICATE KEY UPDATE
+                    payment_method = VALUES(payment_method),
+                    amount_paid = VALUES(amount_paid),
+                    payment_date = VALUES(payment_date),
+                    payment_status = VALUES(payment_status)
                 ");
                 $stmt->execute([':order_id' => $_POST['order_id']]);
             
@@ -177,20 +182,21 @@ $fulfilled_orders = $conn->query("
         OS.id as status_id,
         CASE 
             WHEN OS.status_value = 'Cancelled' THEN 'Cancelled'
-            ELSE COALESCE(P.payment_status, 'Pending')
+            ELSE MAX(COALESCE(P.payment_status, 'Pending'))
         END as payment_status,
         CASE
             WHEN OS.status_value = 'Cancelled' THEN 'Cancelled'
-            ELSE COALESCE(P.payment_method, 'Not Paid')
+            ELSE MAX(COALESCE(P.payment_method, 'Not Paid'))
         END as payment_method,
-        P.payment_date,
-        P.amount_paid
+        MAX(P.payment_date) as payment_date,
+        MAX(P.amount_paid) as amount_paid
     FROM FOOD_ORDER FO
     JOIN CUSTOMERS C ON FO.customer_id = C.id
     JOIN TABLES T ON FO.table_id = T.id
     JOIN ORDER_STATUS OS ON FO.order_status_id = OS.id
     LEFT JOIN PAYMENT P ON FO.id = P.order_id
     WHERE OS.status_value IN ('Delivered', 'Cancelled')
+    GROUP BY FO.id, FO.order_date, FO.total_price, C.first_name, C.last_name, T.table_number, OS.status_value, OS.id
     ORDER BY FO.order_date DESC
 ")->fetchAll();
 

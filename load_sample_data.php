@@ -36,16 +36,26 @@ try {
     // Get database connection
     $conn = getDBConnection();
 
-    // Begin transaction
-    $conn->beginTransaction();
-
     // Clear existing data (in reverse order of dependencies)
+    $conn->exec("SET FOREIGN_KEY_CHECKS = 0");
     $conn->exec("DELETE FROM PAYMENT");
     $conn->exec("DELETE FROM ORDER_MENU_ITEM");
     $conn->exec("DELETE FROM FOOD_ORDER");
     $conn->exec("DELETE FROM MENU_ITEM");
+    $conn->exec("DELETE FROM EMPLOYEES");
     $conn->exec("DELETE FROM CUSTOMERS");
+    $conn->exec("ALTER TABLE PAYMENT AUTO_INCREMENT = 1");
+    $conn->exec("ALTER TABLE ORDER_MENU_ITEM AUTO_INCREMENT = 1");
+    $conn->exec("ALTER TABLE FOOD_ORDER AUTO_INCREMENT = 1");
+    $conn->exec("ALTER TABLE MENU_ITEM AUTO_INCREMENT = 1");
+    $conn->exec("ALTER TABLE EMPLOYEES AUTO_INCREMENT = 1");
+    $conn->exec("ALTER TABLE CUSTOMERS AUTO_INCREMENT = 1");
+    $conn->exec("SET FOREIGN_KEY_CHECKS = 1");
     echo "Cleared existing data successfully.\n";
+
+    // Begin transaction
+    $conn->beginTransaction();
+    $transactionActive = true;
 
     // Load customers
     if (isset($data['customers'])) {
@@ -126,7 +136,12 @@ try {
     if (isset($data['payments'])) {
         foreach ($data['payments'] as $payment) {
             $stmt = $conn->prepare("INSERT INTO PAYMENT (id, order_id, payment_method, amount_paid, payment_date, payment_status) 
-                                  VALUES (?, ?, ?, ?, ?, ?)");
+                                   VALUES (?, ?, ?, ?, ?, ?)
+                                   ON DUPLICATE KEY UPDATE
+                                   payment_method = VALUES(payment_method),
+                                   amount_paid = VALUES(amount_paid),
+                                   payment_date = VALUES(payment_date),
+                                   payment_status = VALUES(payment_status)");
             $stmt->execute([
                 $payment['id'],
                 $payment['order_id'],
@@ -140,12 +155,16 @@ try {
     }
 
     // Commit transaction
-    $conn->commit();
+    if ($transactionActive) {
+        $conn->commit();
+        $transactionActive = false;
+    }
     echo "\nAll sample data loaded successfully!\n";
 
 } catch (Exception $e) {
-    if (isset($conn)) {
+    if (isset($conn) && isset($transactionActive) && $transactionActive) {
         $conn->rollback();
+        $transactionActive = false;
     }
     die("Error: " . $e->getMessage() . "\n");
 } finally {

@@ -4,15 +4,31 @@
             "id": 1,
             "first_name": "Alice",
             "last_name": "Johnson",
-
             "phone": "555-0201"
         },
         {
             "id": 2,
             "first_name": "Bob",
             "last_name": "Wilson",
-
             "phone": "555-0202"
+        },
+        {
+            "id": 3,
+            "first_name": "Carol",
+            "last_name": "Martinez",
+            "phone": "555-0203"
+        },
+        {
+            "id": 4,
+            "first_name": "David",
+            "last_name": "Chen",
+            "phone": "555-0204"
+        },
+        {
+            "id": 5,
+            "first_name": "Emma",
+            "last_name": "Taylor",
+            "phone": "555-0205"
         }
     ],
     "employees": [
@@ -31,6 +47,30 @@
             "role": "Chef",
             "phone": "555-0102",
             "email": "maria.garcia@restaurant.com"
+        },
+        {
+            "id": 3,
+            "first_name": "James",
+            "last_name": "Wilson",
+            "role": "Host",
+            "phone": "555-0103",
+            "email": "james.wilson@restaurant.com"
+        },
+        {
+            "id": 4,
+            "first_name": "Sarah",
+            "last_name": "Brown",
+            "role": "Manager",
+            "phone": "555-0104",
+            "email": "sarah.brown@restaurant.com"
+        },
+        {
+            "id": 5,
+            "first_name": "Michael",
+            "last_name": "Lee",
+            "role": "Bartender",
+            "phone": "555-0105",
+            "email": "michael.lee@restaurant.com"
         }
     ],
     "menu_items": [
@@ -44,6 +84,30 @@
             "id": 2,
             "item_name": "Caesar Salad",
             "price": 9.99,
+            "stock_availability": true
+        },
+        {
+            "id": 3,
+            "item_name": "Margherita Pizza",
+            "price": 15.99,
+            "stock_availability": true
+        },
+        {
+            "id": 4,
+            "item_name": "Grilled Salmon",
+            "price": 24.99,
+            "stock_availability": true
+        },
+        {
+            "id": 5,
+            "item_name": "Chocolate Cake",
+            "price": 7.99,
+            "stock_availability": false
+        },
+        {
+            "id": 6,
+            "item_name": "Chicken Wings",
+            "price": 13.99,
             "stock_availability": true
         }
     ],
@@ -79,6 +143,56 @@
                     "qty_ordered": 1
                 }
             ]
+        },
+        {
+            "id": 3,
+            "customer_id": 3,
+            "order_status_id": 3,
+            "table_id": 2,
+            "order_date": "2025-04-25T17:00:00",
+            "total_price": 48.97,
+            "items": [
+                {
+                    "menu_item_id": 3,
+                    "qty_ordered": 2
+                },
+                {
+                    "menu_item_id": 6,
+                    "qty_ordered": 1
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "customer_id": 4,
+            "order_status_id": 4,
+            "table_id": 1,
+            "order_date": "2025-04-25T17:15:00",
+            "total_price": 32.98,
+            "items": [
+                {
+                    "menu_item_id": 4,
+                    "qty_ordered": 1
+                },
+                {
+                    "menu_item_id": 2,
+                    "qty_ordered": 1
+                }
+            ]
+        },
+        {
+            "id": 5,
+            "customer_id": 5,
+            "order_status_id": 1,
+            "table_id": 4,
+            "order_date": "2025-04-25T17:30:00",
+            "total_price": 41.97,
+            "items": [
+                {
+                    "menu_item_id": 6,
+                    "qty_ordered": 3
+                }
+            ]
         }
     ],
     "payments": [
@@ -89,6 +203,38 @@
             "amount_paid": 22.98,
             "payment_date": "2025-04-25T16:35:00",
             "payment_status": "completed"
+        },
+        {
+            "id": 2,
+            "order_id": 2,
+            "payment_method": "cash",
+            "amount_paid": 15.00,
+            "payment_date": "2025-04-25T16:40:00",
+            "payment_status": "completed"
+        },
+        {
+            "id": 3,
+            "order_id": 3,
+            "payment_method": "debit_card",
+            "amount_paid": 48.97,
+            "payment_date": "2025-04-25T17:10:00",
+            "payment_status": "completed"
+        },
+        {
+            "id": 4,
+            "order_id": 4,
+            "payment_method": "credit_card",
+            "amount_paid": 32.98,
+            "payment_date": "2025-04-25T17:25:00",
+            "payment_status": "pending"
+        },
+        {
+            "id": 5,
+            "order_id": 5,
+            "payment_method": "mobile_payment",
+            "amount_paid": 0.00,
+            "payment_date": "2025-04-25T17:35:00",
+            "payment_status": "pending"
         }
     ]
 }
