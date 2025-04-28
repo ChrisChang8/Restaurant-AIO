@@ -144,7 +144,7 @@ $reservations = $conn->query("
 require_once '../includes/header.php';
 ?>
 
-<div class="container">
+<div class="container py-5">
     <h2 class="mb-4">Make a Reservation</h2>
     
     <?php if (isset($success)): ?>

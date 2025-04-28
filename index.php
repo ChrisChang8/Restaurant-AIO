@@ -5,7 +5,7 @@
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-6">
-                <h1 class="display-4 fw-bold mb-4">Welcome to Restaurant Manager</h1>
+                <h1 class="display-4 fw-bold mb-4">Welcome to Restaurant AIO</h1>
                 <p class="lead mb-4">Streamline your restaurant operations with our comprehensive management system.</p>
                 <a href="pages/reservations.php" class="btn btn-light btn-lg px-4">Get Started</a>
             </div>
